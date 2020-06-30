@@ -1,0 +1,20 @@
+apiVersion: networking.gke.io/v1beta1
+kind: ManagedCertificate
+metadata:
+  name: api-dripio-com
+spec:
+  domains:
+    - api.dripio.com
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: dripio-api-https
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "dripio-api"
+    kubernetes.io/ingress.allow-http: "false"
+    networking.gke.io/managed-certificates: api-dripio-com
+spec:
+  backend:
+    serviceName: dripio-core-service
+    servicePort: 80

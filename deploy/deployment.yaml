@@ -1,0 +1,66 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dripio-core
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      run: dripio-core
+  template:
+    metadata:
+      labels:
+        run: dripio-core
+    spec:
+      containers:
+        - image: gcr.io/atlantean-force-165018/dripio-core:v7.32
+          imagePullPolicy: Always
+          name: dripio-core
+          env:
+            - name: DRIPIO_ENV
+              value: "gcloud"
+          ports:
+            - containerPort: 8085
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8085
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8085
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 3
+---
+apiVersion: cloud.google.com/v1beta1
+kind: BackendConfig
+metadata:
+  name: dripio-core-backendconfig
+spec:
+  timeoutSec: 3600
+  connectionDraining:
+    drainingTimeoutSec: 3600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dripio-core-service
+  namespace: default
+  labels:
+    run: dripio-core
+  annotations:
+    beta.cloud.google.com/backend-config: '{"ports": {"80":"dripio-core-backendconfig"}}'
+spec:
+  selector:
+    run: dripio-core
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8085
+  type: NodePort
